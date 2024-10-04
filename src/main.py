@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from src.data_augmentation import magnitude_warping, ts_mixup
+from src.data_augmentation import magnitude_warping, ts_mixup, jittering
 from src.plots import plot_all_features_separate_subplots
 
 
@@ -40,29 +40,38 @@ def save_csv_with_timestamp(headers, timesteps, augmented_data, output_file):
 
 # Example Usage:
 csv_file = 'data/original/DailyDelhiClimate.csv'
-output_file = 'data/augmented/' + os.path.splitext(os.path.basename(csv_file))[0] + '_augmented.csv'
 
 # Load data
 headers, timestamps, data = load_csv(csv_file)
 
-# A code fragment to repeat for each data augmentation
 
-    # Apply magnitude warping
-    augmented_data = magnitude_warping(data)
-    # Save the augmented data
-    save_csv_with_timestamp(headers, timestamps, augmented_data, output_file)
-    # provide plots for each feature
-    plot_all_features_separate_subplots(headers, timestamps, data, augmented_data)
+# A code fragment repeats for each data augmentation method
 
-# end of fragment
+# Magnitude warping
+augmented_data_MW = magnitude_warping(data)
+# save
+output_file_MW = 'data/augmented/' + os.path.splitext(os.path.basename(csv_file))[0] + '_MW.csv'
+save_csv_with_timestamp(headers, timestamps, augmented_data_MW, output_file_MW)
+# provide plots for each feature
+plot_all_features_separate_subplots(headers, timestamps, data, augmented_data_MW)
 
-    # A code fragment to repeat for each data augmentation
 
-    # Apply TSMixup
-    augmented_data = ts_mixup(data)
-    # Save the augmented data
-    save_csv_with_timestamp(headers, timestamps, augmented_data, output_file)
-    # provide plots for each feature
-    plot_all_features_separate_subplots(headers, timestamps, data, augmented_data)
+# TSMixup
+augmented_data_TSMixup = ts_mixup(data)
+# save
+output_file_TSMixup = 'data/augmented/' + os.path.splitext(os.path.basename(csv_file))[0] + '_TSMixup.csv'
+save_csv_with_timestamp(headers, timestamps, augmented_data_TSMixup, output_file_TSMixup)
+# provide plots for each feature
+plot_all_features_separate_subplots(headers, timestamps, data, augmented_data_TSMixup)
 
-    # end of fragment
+
+# Jittering
+#augmented_data_Jit = jittering(data)
+augmented_data_Jit = jittering(data)
+# save
+output_file_Jit = 'data/augmented/' + os.path.splitext(os.path.basename(csv_file))[0] + '_Jittering.csv'
+save_csv_with_timestamp(headers, timestamps, augmented_data_Jit, output_file_Jit)
+# provide plots for each feature
+plot_all_features_separate_subplots(headers, timestamps, data, augmented_data_Jit)
+
+

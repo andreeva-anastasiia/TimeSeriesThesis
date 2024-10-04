@@ -2,9 +2,10 @@ import os
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 from src.data_augmentation import magnitude_warping, ts_mixup, jittering
+from src.evaluation import basic_statistics, histograms, KDE_plots, distributions, statistical_tests, corr_analysis, \
+    distributions2, autocorrelation, trend_seas_resid
 from src.plots import plot_all_features_separate_subplots
 
 
@@ -75,3 +76,20 @@ save_csv_with_timestamp(headers, timestamps, augmented_data_Jit, output_file_Jit
 plot_all_features_separate_subplots(headers, timestamps, data, augmented_data_Jit)
 
 
+#evaluation
+
+basic_statistics(csv_file)
+basic_statistics(output_file_MW)
+
+histograms(csv_file, output_file_MW)
+KDE_plots(csv_file, output_file_MW)
+
+distributions2(csv_file, output_file_MW)
+
+statistical_tests(csv_file, output_file_MW)
+
+corr_analysis(csv_file)
+corr_analysis(output_file_MW)
+
+trend_seas_resid(csv_file)
+autocorrelation(csv_file)

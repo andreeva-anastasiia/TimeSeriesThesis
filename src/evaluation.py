@@ -1,14 +1,4 @@
-'''
-
-# Dataset. sthrengh of season, season length, time series properties??? Biases
-
-
-Predictability
-
-List with evaluation approaches framework.
-
-'''
-
+from datetime import datetime
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -17,7 +7,8 @@ from scipy import stats
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.seasonal import seasonal_decompose
 
-# Write a common method to load datasets
+
+
 # Rewrite to independent
 # Performance metrics def
 
@@ -46,7 +37,8 @@ def histograms(original, augmented):
         axs[i//2, i%2].legend()
 
     plt.tight_layout()
-    plt.show()
+    #plt.show()
+    save_eval_plot('histograms')
 
 '''
 A Kernel Density Estimate plot is applied 
@@ -75,7 +67,8 @@ def KDE_plots(original, augmented):
         axs[i // 2, i % 2].legend()
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
+    save_eval_plot('KDE_plots')
 
 
 # Distributions of characteristics # Pairplot for all variables
@@ -86,7 +79,8 @@ def distributions(data):
 
     sns.pairplot(df1[['meantemp', 'humidity', 'wind_speed', 'meanpressure']])
     plt.suptitle('Pair Plot for All Variables', y=1.02)
-    plt.show()
+    # plt.show()
+    save_eval_plot('distributions')
 
 
 # Distributions of characteristics for 2 datasets # Pairplot for all variables
@@ -107,7 +101,8 @@ def distributions2(original, augmented):
     sns.pairplot(combined_df, hue='dataset', markers=["o", "s"], palette='husl', height=2.5)
 
     plt.suptitle('Pair Plot for All Variables', y=1.02)
-    plt.show()
+    # plt.show()
+    save_eval_plot('distributions 2')
 
 
 # Statistical Tests
@@ -136,7 +131,8 @@ def corr_analysis(data):
     plt.figure(figsize=(12, 6))
     sns.heatmap(correlation_df, annot=True, cmap='coolwarm', center=0)
     plt.title('Correlation Heatmap - original')
-    plt.show()
+    # plt.show()
+    save_eval_plot('corr_analysis')
 
 
 '''
@@ -148,7 +144,8 @@ def trend_seas_resid(data):
     df = pd.read_csv(data, parse_dates=['date'])
     result = seasonal_decompose(df['meantemp'], model='additive', period=365)
     result.plot()
-    plt.show()
+    # plt.show()
+    save_eval_plot('trend_seas_resid')
 
     # You can access individual components
     trend = result.trend
@@ -167,11 +164,18 @@ def autocorrelation(data):
     df = pd.read_csv(data, parse_dates=['date'])
     # Autocorrelation plot
     plot_acf(df['meantemp'], lags=50)
-    plt.show()
+    # plt.show()
+    save_eval_plot('autocorrelation')
 
     # Partial autocorrelation plot
     plot_pacf(df['meantemp'], lags=50)
+    # plt.show()
+    save_eval_plot('part_autocorrelation')
+
+# Save plot as PNG
+def save_eval_plot(plot_name):
+    timestamp = datetime.now().strftime("%d%m%Y_%H%M%S")  # Format: YYYYMMDD_HHMMSS
+    save_path = 'plots/' + plot_name + f'_{timestamp}.png'
+    plt.savefig(save_path)
+
     plt.show()
-
-
-

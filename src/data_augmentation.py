@@ -31,11 +31,8 @@ def magnitude_warping(data, sigma=0.2, knot=4):
 # TSMixup
 def ts_mixup(data, alpha=0.2):
     """
-    Apply the TSMixup augmentation to time-series data (excluding the date).
-
-    :param data: Multivariate time-series data (numpy array or pandas DataFrame, excluding the timestamp)
-    :param alpha: Hyperparameter for the Beta distribution
-    :return: Mixed time-series data (Augmented)
+    data: Multivariate time-series data excluding timestamp
+    alpha: parameter for the Beta distribution
     """
     # Initialize augmented data list
     tsmixuped_data = []

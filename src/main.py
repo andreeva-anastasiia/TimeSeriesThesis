@@ -2,7 +2,15 @@ import os
 
 import numpy as np
 import pandas as pd
+import scaler as scaler
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from sklearn.preprocessing import MinMaxScaler
 
+from sklearn.preprocessing import MinMaxScaler
+
+from src.GAN import Generator, Discriminator, GAN
 from src.data_augmentation import magnitude_warping, ts_mixup, jittering
 from src.evaluation import basic_statistics, histograms, KDE_plots, distributions, statistical_tests, corr_analysis, \
     distributions2, autocorrelation, trend_seas_resid
@@ -23,13 +31,7 @@ def load_csv(file_path):
     return headers, timestamps, features  # Return column names, timestamps and numeric data
 
 
-# 3. Save the augmented data
-def save_csv(data, output_file):
-    df = pd.DataFrame(data)
-    df.to_csv(output_file, index=False)
-
-
-# Step 3: Save the augmented data with timestamps
+# Save the augmented data with timestamps
 def save_csv_with_timestamp(headers, timesteps, augmented_data, output_file):
     # Combine the timestamps with the augmented data
     augmented_df = pd.DataFrame(augmented_data, columns=headers[1:]) #using original columns names
@@ -44,6 +46,7 @@ csv_file = 'data/original/DailyDelhiClimate.csv'
 
 # Load data
 headers, timestamps, data = load_csv(csv_file)
+
 
 
 # A code fragment repeats for each data augmentation method
@@ -76,20 +79,32 @@ save_csv_with_timestamp(headers, timestamps, augmented_data_Jit, output_file_Jit
 plot_all_features_separate_subplots(headers, timestamps, data, augmented_data_Jit)
 
 
+
+# Create the GAN instance
+gan = GAN(data)
+# Train the GAN
+gan.train()
+
+synthetic_data_GAN = gan.generate_synthetic_data(num_samples=1000)
+output_file_GAN = 'data/synthetic/' + os.path.splitext(os.path.basename(csv_file))[0] + '.csv'
+save_csv_with_timestamp(headers, timestamps, synthetic_data_GAN, output_file_GAN)
+
+
 #evaluation
 
 basic_statistics(csv_file)
-basic_statistics(output_file_MW)
+basic_statistics(output_file_GAN)
 
-histograms(csv_file, output_file_MW)
-KDE_plots(csv_file, output_file_MW)
+histograms(csv_file, output_file_GAN)
+KDE_plots(csv_file, output_file_GAN)
 
-distributions2(csv_file, output_file_MW)
+distributions2(csv_file, output_file_GAN)
 
-statistical_tests(csv_file, output_file_MW)
+statistical_tests(csv_file, output_file_GAN)
 
 corr_analysis(csv_file)
-corr_analysis(output_file_MW)
+corr_analysis(output_file_GAN)
 
 trend_seas_resid(csv_file)
+trend_seas_resid(output_file_GAN)
 autocorrelation(csv_file)

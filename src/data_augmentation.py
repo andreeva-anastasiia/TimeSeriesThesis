@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from scipy.interpolate import CubicSpline
 
 
@@ -53,10 +54,8 @@ def ts_mixup(data, alpha=0.2):
 
     return np.array(tsmixuped_data)
 
-# Jittering
-import pandas as pd
-import numpy as np
 
+# Jittering
 
 def jittering(data, noise_factor=0.01):
     """
@@ -76,3 +75,39 @@ def jittering(data, noise_factor=0.01):
 
     return jittered_data
 
+
+# Permutation
+import numpy as np
+
+
+def permutation(data, n_permutations=1):
+    """
+    Perform permutation data augmentation on 3D multivariate data.
+
+    Parameters:
+    - data (np.ndarray): The original 3D dataset with shape (n_batches, n_samples, n_features).
+    - n_permutations (int): Number of permuted datasets to generate.
+
+    Returns:
+    - augmented_data (list): A list of permuted datasets.
+    """
+    if len(data.shape) != 3:
+        raise ValueError(f"Expected 3D input. Got {data.shape}")
+
+    n_batches, n_samples, n_features = data.shape
+    augmented_data = []
+
+    # Generate n_permutations datasets
+    for _ in range(n_permutations):
+        # Initialize an empty array to store permuted data
+        permuted_data = np.zeros_like(data)
+
+        # Permute each batch independently
+        for batch in range(n_batches):
+            for feature in range(n_features):
+                # Shuffle the time steps for each feature within each batch
+                permuted_data[batch, :, feature] = np.random.permutation(data[batch, :, feature])
+
+        augmented_data.append(permuted_data)
+
+    return augmented_data

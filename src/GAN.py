@@ -31,32 +31,6 @@ class Discriminator(nn.Module):
     def forward(self, x):
         return self.model(x)
 
-# LSTM-based Generator
-class LSTMGenerator(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, output_size):
-        super(LSTMGenerator, self).__init__()
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, output_size)
-
-    def forward(self, x):
-        out, _ = self.lstm(x)
-        out = self.fc(out[:, -1, :])  # Take output of the last time step
-        return out
-
-# LSTM-based Discriminator
-class LSTMDiscriminator(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers):
-        super(LSTMDiscriminator, self).__init__()
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, 1)
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, x):
-        out, _ = self.lstm(x)
-        out = self.fc(out[:, -1, :])  # Take output of the last time step
-        out = self.sigmoid(out)
-        return out
-
 
 class GAN:
     def __init__(self, data, input_size=100, lr=0.0001, num_epochs=10000, batch_size=64):

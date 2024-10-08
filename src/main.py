@@ -10,8 +10,9 @@ from sklearn.preprocessing import MinMaxScaler
 
 from sklearn.preprocessing import MinMaxScaler
 
-from src.GAN import Generator, Discriminator, GAN
-from src.data_augmentation import magnitude_warping, ts_mixup, jittering
+from src.CWGAN import CWGAN
+from src.GAN import GAN
+from src.data_augmentation import magnitude_warping, ts_mixup, jittering, permutation
 from src.evaluation import basic_statistics, histograms, KDE_plots, distributions, statistical_tests, corr_analysis, \
     distributions2, autocorrelation, trend_seas_resid
 from src.plots import plot_all_features_separate_subplots
@@ -47,6 +48,9 @@ csv_file = 'data/original/DailyDelhiClimate.csv'
 # Load data
 headers, timestamps, data = load_csv(csv_file)
 
+print(timestamps)
+print(data)
+
 
 
 # A code fragment repeats for each data augmentation method
@@ -70,7 +74,6 @@ plot_all_features_separate_subplots(headers, timestamps, data, augmented_data_TS
 
 
 # Jittering
-#augmented_data_Jit = jittering(data)
 augmented_data_Jit = jittering(data)
 # save
 output_file_Jit = 'data/augmented/' + os.path.splitext(os.path.basename(csv_file))[0] + '_Jittering.csv'
@@ -79,15 +82,35 @@ save_csv_with_timestamp(headers, timestamps, augmented_data_Jit, output_file_Jit
 plot_all_features_separate_subplots(headers, timestamps, data, augmented_data_Jit)
 
 
+# Permutation
+augmented_data_Perm = permutation(data, 4)
+#save
+output_file_Perm = 'data/augmented/' + os.path.splitext(os.path.basename(csv_file))[0] + '_Permutation.csv'
+save_csv_with_timestamp(headers, timestamps, augmented_data_Perm, output_file_Perm)
+# provide plots for each feature
+plot_all_features_separate_subplots(headers, timestamps, data, augmented_data_Perm)
+
 
 # Create the GAN instance
 gan = GAN(data)
-# Train the GAN
 gan.train()
 
-synthetic_data_GAN = gan.generate_synthetic_data(num_samples=1000)
-output_file_GAN = 'data/synthetic/' + os.path.splitext(os.path.basename(csv_file))[0] + '.csv'
+synthetic_data_GAN = gan.generate_synthetic_data(1462)
+output_file_GAN = 'data/synthetic/' + os.path.splitext(os.path.basename(csv_file))[0] + '_GAN.csv'
 save_csv_with_timestamp(headers, timestamps, synthetic_data_GAN, output_file_GAN)
+plot_all_features_separate_subplots(headers, timestamps, data, synthetic_data_GAN)
+
+
+# Create the CWGAN instance
+cwgan = CWGAN(data, timestamps, headers)
+cwgan.train(num_epochs=1000, batch_size=64)
+
+synthetic_data_CWGAN = cwgan.generate_fake_data(1462)
+output_file_CWGAN = 'data/synthetic/' + os.path.splitext(os.path.basename(csv_file))[0] + '_CWGAN.csv'
+save_csv_with_timestamp(headers, timestamps, synthetic_data_CWGAN, output_file_CWGAN)
+#plot_all_features_separate_subplots(headers, timestamps, data, synthetic_data_CWGAN)
+
+
 
 
 #evaluation

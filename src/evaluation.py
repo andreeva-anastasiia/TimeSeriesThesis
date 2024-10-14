@@ -149,8 +149,10 @@ def trend_seas_resid(data):
 
     # You can access individual components
     trend = result.trend
-    seasonal = result.seasonal
+    seasonality = result.seasonal
     residual = result.resid
+
+
 
 '''
 Autocorrelation:

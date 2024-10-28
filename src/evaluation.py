@@ -13,32 +13,60 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 # Performance metrics def
 
 # One function per measure
-def basic_statistics(data):
 
-    # Load the dataset
-    df = pd.read_csv(data, parse_dates=['date'])
-
-    print("Dataset 1 Statistics:\n", df.describe())
 
 
 # Histograms #relative balance of characteristics
-def histograms(original, augmented):
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
+def histograms(original, augmented):
     # Load the datasets
     df1 = pd.read_csv(original, parse_dates=['date'])
     df2 = pd.read_csv(augmented, parse_dates=['date'])
 
-    fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+    # Find common columns between the two DataFrames, excluding 'date' and any additional non-numeric columns
+    common_columns = df1.columns.intersection(df2.columns).difference(['date'])
+    numeric_columns = [col for col in common_columns if pd.api.types.is_numeric_dtype(df1[col])]
 
-    for i, column in enumerate(['meantemp', 'humidity', 'wind_speed', 'meanpressure']):
-        sns.histplot(df1[column], kde=True, ax=axs[i//2, i%2], color='blue', label='original', stat='density')
-        sns.histplot(df2[column], kde=True, ax=axs[i//2, i%2], color='orange', label='augmented', stat='density')
-        axs[i//2, i%2].set_title(column)
-        axs[i//2, i%2].legend()
+    # Set up the plotting grid dynamically based on the number of columns
+    n_cols = 2  # Number of columns in the grid
+    n_rows = (len(numeric_columns) + 1) // n_cols  # Number of rows needed
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(12, 5 * n_rows))
+    axs = axs.flatten()  # Flatten for easy indexing if more than 4 columns
+
+    # Generate histograms for each numeric common column
+    for i, column in enumerate(numeric_columns):
+        sns.histplot(df1[column], kde=True, ax=axs[i], color='blue', label='Original', stat='density')
+        sns.histplot(df2[column], kde=True, ax=axs[i], color='orange', label='Augmented', stat='density')
+        axs[i].set_title(column)
+        axs[i].legend()
+
+    # Hide any extra subplots (if more grid space than columns)
+    for j in range(i + 1, len(axs)):
+        axs[j].axis('off')
 
     plt.tight_layout()
-    #plt.show()
+    # plt.show()  # Uncomment to display the plot
     save_eval_plot('histograms')
+# def histograms(original, augmented):
+#
+#     # Load the datasets
+#     df1 = pd.read_csv(original, parse_dates=['date'])
+#     df2 = pd.read_csv(augmented, parse_dates=['date'])
+#
+#     fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+#
+#     for i, column in enumerate(['meantemp', 'humidity', 'wind_speed', 'meanpressure']):
+#         sns.histplot(df1[column], kde=True, ax=axs[i//2, i%2], color='blue', label='original', stat='density')
+#         sns.histplot(df2[column], kde=True, ax=axs[i//2, i%2], color='orange', label='augmented', stat='density')
+#         axs[i//2, i%2].set_title(column)
+#         axs[i//2, i%2].legend()
+#
+#     plt.tight_layout()
+#     #plt.show()
+#     save_eval_plot('histograms')
 
 '''
 A Kernel Density Estimate plot is applied 
@@ -71,19 +99,36 @@ def KDE_plots(original, augmented):
     save_eval_plot('KDE_plots')
 
 
-# Distributions of characteristics # Pairplot for all variables
-def distributions(data):
+'''
+3.  Compare how generated data distributions with the original time-series data
+'''
+def basic_statistics(data):
 
+    # Load the dataset
+    df = pd.read_csv(data, parse_dates=['date'])
+
+    print("Dataset 1 Statistics:\n", df.describe())
+
+
+# Distributions of characteristics for 1 dataset
+# Pairplot for all variables
+def distributions(data):
     # Load the dataset
     df1 = pd.read_csv(data, parse_dates=['date'])
 
-    sns.pairplot(df1[['meantemp', 'humidity', 'wind_speed', 'meanpressure']])
+    # Select numeric columns, excluding 'date' if it exists
+    numeric_columns = [col for col in df1.columns if pd.api.types.is_numeric_dtype(df1[col]) and col != 'date']
+
+    # Create pair plot for numeric columns only
+    sns.pairplot(df1[numeric_columns])
     plt.suptitle('Pair Plot for All Variables', y=1.02)
-    # plt.show()
+    # plt.show()  # Uncomment to display the plot
     save_eval_plot('distributions')
 
 
-# Distributions of characteristics for 2 datasets # Pairplot for all variables
+
+# Distributions of characteristics for 2 datasets
+# Pairplot for all variables
 def distributions2(original, augmented):
     # Load the datasets
     df1 = pd.read_csv(original, parse_dates=['date'])
@@ -93,16 +138,19 @@ def distributions2(original, augmented):
     df1['dataset'] = 'Original'  # Mark df1 as 'Original'
     df2['dataset'] = 'Augmented'  # Mark df2 as 'Augmented'
 
-    # Combine the datasets into one DataFrame
-    combined_df = pd.concat([df1[['meantemp', 'humidity', 'wind_speed', 'meanpressure', 'dataset']],
-                             df2[['meantemp', 'humidity', 'wind_speed', 'meanpressure', 'dataset']]])
+    # Find the common columns (excluding the 'dataset' column that we added)
+    common_columns = df1.columns.intersection(df2.columns).difference(['dataset'])
 
-    # Create the pair plot
+    # Combine the datasets into one DataFrame with the common columns and the 'dataset' column
+    combined_df = pd.concat([df1[common_columns.union(['dataset'])],
+                             df2[common_columns.union(['dataset'])]], ignore_index=True)
+
+    # Create the pair plot using Seaborn
     sns.pairplot(combined_df, hue='dataset', markers=["o", "s"], palette='husl', height=2.5)
 
     plt.suptitle('Pair Plot for All Variables', y=1.02)
-    # plt.show()
-    save_eval_plot('distributions 2')
+    # plt.show()  # Uncomment to display the plot
+    save_eval_plot('distributions_2')
 
 
 # Statistical Tests
@@ -112,27 +160,44 @@ def statistical_tests(original, augmented):
     df1 = pd.read_csv(original, parse_dates=['date'])
     df2 = pd.read_csv(augmented, parse_dates=['date'])
 
+    # Identify common numeric columns, excluding 'date' if it exists
+    common_columns = df1.columns.intersection(df2.columns).difference(['date'])
+    numeric_columns = [col for col in common_columns if pd.api.types.is_numeric_dtype(df1[col])]
+
+    # Initialize dictionary to store KS test results
     ks_results = {}
-    for column in ['meantemp', 'humidity', 'wind_speed', 'meanpressure']:
-        ks_stat, ks_p_value = stats.ks_2samp(df1[column], df2[column])
+
+    # Perform KS test for each numeric common column
+    for column in numeric_columns:
+        ks_stat, ks_p_value = stats.ks_2samp(df1[column].dropna(), df2[column].dropna())
         ks_results[column] = (ks_stat, ks_p_value)
 
     print("KS Test Results:\n", ks_results)
 
 
+
+'''
+5.  Compare cross-variable dependencies. 
+'''
+
 # Correlation Analysis
 def corr_analysis(data):
-    # Load the datasets
+    # Load the dataset
     df = pd.read_csv(data, parse_dates=['date'])
 
-    correlation_df = df[['meantemp', 'humidity', 'wind_speed', 'meanpressure']].corr()
+    # Select numeric columns, excluding 'date' if it exists
+    numeric_columns = [col for col in df.columns if pd.api.types.is_numeric_dtype(df[col]) and col != 'date']
 
-    # Correlation Heatmaps
+    # Calculate the correlation matrix for numeric columns
+    correlation_df = df[numeric_columns].corr()
+
+    # Plot the Correlation Heatmap
     plt.figure(figsize=(12, 6))
     sns.heatmap(correlation_df, annot=True, cmap='coolwarm', center=0)
-    plt.title('Correlation Heatmap - original')
-    # plt.show()
+    plt.title('Correlation Heatmap')
+    # plt.show()  # Uncomment to display the plot
     save_eval_plot('corr_analysis')
+
 
 
 '''
@@ -155,24 +220,56 @@ def trend_seas_resid(data):
 
 
 '''
-Autocorrelation:
-Strong: Indicates that data points in the time series are highly dependent on their past values. 
-Low: Data points are less dependent on their past values, showing little or no recurring pattern or trend over time.
+    4. Does the generated data capture the same correlation dependencies 
+    within each variable with its past values
+    Autocorrelation:
+    Strong: Indicates that data points in the time series are highly dependent on their past values. 
+    Low: Data points are less dependent on their past values, showing little or no recurring pattern or trend over time.
+    
+    Y - The autocorrelation coefficient (from -1 to 1). 
+    Values close to 1 indicate a strong positive correlation, 
+    Values close to -1 indicate a strong negative correlation. 
+    
+    X - The lag, or the number of time periods between the observations compared
 '''
 
 # Evaluation of Autocorrelation
+# def autocorrelation(data):
+#
+#     df = pd.read_csv(data, parse_dates=['date'])
+#     # Autocorrelation plot
+#     plot_acf(df['meantemp'], lags=50)
+#     # plt.show()
+#     save_eval_plot('autocorrelation')
+#
+#     # Partial autocorrelation plot
+#     plot_pacf(df['meantemp'], lags=50)
+#     # plt.show()
+#     save_eval_plot('part_autocorrelation')
+
+
 def autocorrelation(data):
-
+    # Load the dataset
     df = pd.read_csv(data, parse_dates=['date'])
-    # Autocorrelation plot
-    plot_acf(df['meantemp'], lags=50)
-    # plt.show()
-    save_eval_plot('autocorrelation')
 
-    # Partial autocorrelation plot
-    plot_pacf(df['meantemp'], lags=50)
-    # plt.show()
-    save_eval_plot('part_autocorrelation')
+    # Select numeric columns, excluding 'date' if it exists
+    numeric_columns = [col for col in df.columns if pd.api.types.is_numeric_dtype(df[col]) and col != 'date']
+
+    # Iterate over each numeric column to plot autocorrelation and partial autocorrelation
+    for column in numeric_columns:
+        # Autocorrelation plot
+        plt.figure(figsize=(12, 6))
+        plot_acf(df[column], lags=50)
+        plt.title(f'Autocorrelation Plot for {column}')
+        # plt.show()  # Uncomment to display the plot
+        save_eval_plot(f'autocorrelation_{column}')
+
+        # Partial autocorrelation plot
+        plt.figure(figsize=(12, 6))
+        plot_pacf(df[column], lags=50)
+        plt.title(f'Partial Autocorrelation Plot for {column}')
+        # plt.show()  # Uncomment to display the plot
+        save_eval_plot(f'part_autocorrelation_{column}')
 
 # Save plot as PNG
 def save_eval_plot(plot_name):

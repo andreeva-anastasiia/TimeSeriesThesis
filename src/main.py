@@ -6,11 +6,12 @@ from matplotlib import pyplot as plt
 #from scr_trash_bin.GAN import GAN
 from src.GAN_seasonality import seasonality_generate, extract_components, save_component, prepare_gan_data, \
     save_generated_seasonality, save_generated_trend, trend_generate, prepare_gan_data_trend, built_new_feature
-from src.data_augmentation import magnitude_warping, ts_mixup, jittering
+from src.data_augmentation import magnitude_warping, ts_mixup, jittering, TS_Mixup
 from src.evaluation import basic_statistics, histograms, KDE_plots, statistical_tests, corr_analysis, \
     distributions2, autocorrelation, trend_seas_resid
 from src.forecasting_models import data_split, fit_sarimax, perform_metrics
-from src.plots import plot_all_features_separate_subplots, plot_component, plot_seasonalities
+from src.plots import plot_all_features_separate_subplots, plot_component, plot_seasonalities, plot_time_series, \
+    plot_time_series_datasets
 
 
 # Load multivariate time-series data in csv format
@@ -42,7 +43,7 @@ def save_csv_with_timestamp(headers, timesteps, augmented_data, output_file):
 
 # the source file
 # csv_file = 'data/original/DailyDelhiClimate/DailyDelhiClimate.csv'
-csv_file_path = 'data/original/GOOGL_stock_2006_to_2018/GOOGL_stock_2006_to_2018.csv'
+csv_file_path = 'data/original/DailyDelhiClimate/DailyDelhiClimate.csv'
 csv_file = os.path.splitext(os.path.basename(csv_file_path))[0]
 
 # Load data
@@ -54,6 +55,87 @@ headers, timestamps, data = load_csv(csv_file_path)
 
 
 # A code fragment repeats for each data augmentation method
+
+# Load the CSV where each column is a time series
+# univariate_df = pd.read_csv("data/original/univariate/univariate.csv")
+# multivariate_df = pd.read_csv("data/original/DailyDelhiClimate/DailyDelhiClimate.csv")
+# Transpose if necessary and convert columns to a list of arrays, ignoring NaN
+# time_series_data = [multivariate_df[col].dropna().values for col in multivariate_df.columns]
+# time_series_data = [univariate_df['count'].dropna().values]
+
+
+
+
+# Call TSMixup Chronos function
+# augmented_series = TSMixup(time_series_data)
+# Convert the entire dataset to a single multivariate time series array
+
+# Segment into smaller time series windows if desired, otherwise treat as a single series
+# window_size = 1462  # Define window size (adjust as needed)
+# data_segments = [data[i:i + window_size] for i in range(0, len(data) - window_size + 1, window_size)]
+#
+# augmented_series = TSMixup(data_segments)
+#
+# print("Augmented series shape:", augmented_series.shape)  # Should match (length, features)
+#
+#
+# # save
+# output_file_TSMixupChronos = 'data/augmented/' + os.path.splitext(os.path.basename(csv_file))[0] + '_TSMixupChronos.csv'
+# save_csv_with_timestamp(headers, timestamps, augmented_series, output_file_TSMixupChronos)
+# # provide plots for each feature
+#
+#
+# # x and y must have same first dimension, but have shapes (1462,) and (100,)
+# # plot_all_features_separate_subplots(headers, timestamps, data, augmented_series)
+#
+#
+# # Plot the original and augmented series
+# plot_time_series(data_segments, augmented_series, headers[1:])
+
+
+def create_yearly_datasets(dataset, num_years=4):
+    """
+    Split a dataset into multiple datasets, each corresponding to a full year.
+
+    Parameters:
+    - dataset: 2D NumPy array with shape (1462, features)
+    - num_years: Number of yearly datasets to generate
+
+    Returns:
+    - list of 2D NumPy arrays, each with shape (365, features) except for the last one
+    """
+    yearly_datasets = []
+    days_in_year = dataset.shape[0] // num_years  # Split dataset into 4 parts (approximately)
+
+    for i in range(num_years):
+        start_idx = i * days_in_year
+        end_idx = (i + 1) * days_in_year if i < num_years - 1 else dataset.shape[0]
+        yearly_datasets.append(dataset[start_idx:end_idx])
+
+    return yearly_datasets
+
+# Create separate datasets, each representing a year
+datasets = create_yearly_datasets(data)
+print("Number of yearly datasets:", len(datasets))
+print("Shape of each dataset:", datasets[0].shape)
+
+# datasets = [dataset_1, dataset_2, dataset_3]
+dataset_names = ['Dataset 1', 'Dataset 2', 'Dataset 3', 'Dataset 4']
+
+
+# Generate an augmented time series
+augmented_series = TS_Mixup(datasets)
+print("Augmented Series Shape:", augmented_series.shape)
+
+# save
+output_file_TSMixupChronos = 'data/augmented/' + os.path.splitext(os.path.basename(csv_file))[0] + '_TSMixupChronos.csv'
+save_csv_with_timestamp(headers, timestamps, augmented_series, output_file_TSMixupChronos)
+
+# Plot the datasets and the augmented series
+plot_time_series_datasets(datasets, dataset_names, augmented_series, augmented_name='Augmented Series')
+
+
+
 
 # Magnitude warping
 # augmented_data_MW = magnitude_warping(data)
@@ -158,22 +240,22 @@ headers, timestamps, data = load_csv(csv_file_path)
 
 
 
-
-# Load data
-df = pd.read_csv(csv_file_path, parse_dates=['date'])
-df_gan = df
-
-# meantemp = df["meantemp"]  # Use 'df' here to extract the 'meantemp' column
-# Dictionary to store each column as a separate variable
-# data_columns = {col: df[col] for col in df.columns}
-
-# Dictionary to store each feature, but without date
-data_columns = {col: df[col] for col in df.columns if col != 'date'}
-
-
-'''
-    A loop for all data features
-'''
+#
+# # Load data
+# df = pd.read_csv(csv_file_path, parse_dates=['date'])
+# df_gan = df
+#
+# # meantemp = df["meantemp"]  # Use 'df' here to extract the 'meantemp' column
+# # Dictionary to store each column as a separate variable
+# # data_columns = {col: df[col] for col in df.columns}
+#
+# # Dictionary to store each feature, but without date
+# data_columns = {col: df[col] for col in df.columns if col != 'date'}
+#
+#
+# '''
+#     A loop for all data features
+# '''
 # for col_name, col_data in data_columns.items():
 #     # print(f"{col_name}:")
 #     # print(col_data.head())  # or any operation you want to pe
@@ -218,7 +300,7 @@ data_columns = {col: df[col] for col in df.columns if col != 'date'}
 #     Loop finish
 # '''
 #
-output_GAN_seas = "data/synthetic/" + f"{csv_file}/{csv_file}_generated_seasonality_GAN.csv"
+# output_GAN_seas = "data/synthetic/" + f"{csv_file}/{csv_file}_generated_seasonality_GAN.csv"
 # save_csv_with_timestamp(headers, timestamps, df_gan, output_GAN_seas)
 #
 # # provide plots for each feature
@@ -269,87 +351,85 @@ output_GAN_seas = "data/synthetic/" + f"{csv_file}/{csv_file}_generated_seasonal
 
 
 
-'''
-    Evaluation concept
-'''
-# 3. Does the generated time-series have almost similar variables distributions with the original time-series data?
+# '''
+#     Evaluation concept
+# '''
+# # 1. and 2. Trend and seasonality generator and discriminator losses plots are inside their train functions.
+#
+# # 3. Does the generated time-series have almost similar variables distributions with the original time-series data?
 # basic_statistics(csv_file_path)
 # basic_statistics(output_GAN_seas)
 #
 # distributions2(csv_file_path, output_GAN_seas)
 # histograms(csv_file_path, output_GAN_seas)
-
-
-# 4. Does the generated data capture the same correlation dependencies
-# within each variable with its past values (autocorrelation)?
+#
+#
+# # 4. Does the generated data capture the same correlation dependencies
+# # within each variable with its past values (autocorrelation)?
 # autocorrelation(csv_file_path)
-
-
-
-# 5. Does the generated data capture similar cross-variable dependencies.
-# Dependencies can be contemporaneous (relations between variables at the same timestamp) or lagged (one variable influences another after a time delay)?
-# Check the corr between external influence and aug time-series to reach more variety with aug external influences
-
+#
+#
+# # 5. Does the generated data capture similar cross-variable dependencies.
 # corr_analysis(csv_file_path)
 # corr_analysis(output_GAN_seas)
-
-
-# 6. A global model performance
-train, test = data_split(csv_file_path)
-train_g, test_g = data_split(output_GAN_seas)
-
-# Fit the model and make predictions
-predicted_temp, model_fit = fit_sarimax(train, test)
-
-predicted_temp_g, model_fit_g = fit_sarimax(train_g, test_g)
-
-# Performance metrics to console
-perform_metrics(test, predicted_temp)
-perform_metrics(test_g, predicted_temp_g)
-
-# Ensure train and test datasets are defined before calling fit_sarimax
-if 'train' in locals() and 'test' in locals():
-    # Fit the model and make predictions
-    predicted_temp, model_fit = fit_sarimax(train, test)
-
-    # Plotting the results
-    plt.figure(figsize=(12, 6))
-    plt.plot(train.index, train[train.columns[0]], label='Train', color='blue')  # Train target
-    plt.plot(test.index, test[test.columns[0]], label='Test', color='orange')  # Test target
-    plt.plot(test.index, predicted_temp, label='Predicted', color='green')  # Predictions
-    plt.title(f'{train.columns[0]} Prediction')
-    plt.xlabel('Date')
-    plt.ylabel(train.columns[0])
-    plt.legend()
-    plt.show()
-
-    # Print the summary of the model
-    print(model_fit.summary())
-else:
-    print("Train and test datasets are not defined.")
-
-
-
-# Ensure train and test datasets are defined before calling fit_sarimax
-if 'train' in locals() and 'test' in locals():
-    # Fit the model and make predictions
-    predicted_temp_g, model_fit_g = fit_sarimax(train_g, test_g)
-
-    # Plotting the results
-    plt.figure(figsize=(12, 6))
-    plt.plot(train_g.index, train_g[train_g.columns[0]], label='Train', color='blue')  # Train target
-    plt.plot(test_g.index, test_g[test_g.columns[0]], label='Test', color='orange')  # Test target
-    plt.plot(test_g.index, predicted_temp_g, label='Predicted', color='green')  # Predictions
-    plt.title(f'{train_g.columns[0]} Prediction')
-    plt.xlabel('Date')
-    plt.ylabel(train_g.columns[0])
-    plt.legend()
-    plt.show()
-
-    # Print the summary of the model
-    print(model_fit_g.summary())
-else:
-    print("Train and test datasets are not defined.")
+#
+#
+# # 6. A global model performance
+# train, test = data_split(csv_file_path)
+# train_g, test_g = data_split(output_GAN_seas)
+#
+# # Fit the model and make predictions
+# predicted_temp, model_fit = fit_sarimax(train, test)
+#
+# predicted_temp_g, model_fit_g = fit_sarimax(train_g, test_g)
+#
+# # Performance metrics to console
+# perform_metrics(test, predicted_temp)
+# perform_metrics(test_g, predicted_temp_g)
+#
+# # Ensure train and test datasets are defined before calling fit_sarimax
+# if 'train' in locals() and 'test' in locals():
+#     # Fit the model and make predictions
+#     predicted_temp, model_fit = fit_sarimax(train, test)
+#
+#     # Plotting the results
+#     plt.figure(figsize=(12, 6))
+#     plt.plot(train.index, train[train.columns[0]], label='Train', color='blue')  # Train target
+#     plt.plot(test.index, test[test.columns[0]], label='Test', color='orange')  # Test target
+#     plt.plot(test.index, predicted_temp, label='Predicted', color='green')  # Predictions
+#     plt.title(f'{train.columns[0]} Prediction')
+#     plt.xlabel('Date')
+#     plt.ylabel(train.columns[0])
+#     plt.legend()
+#     plt.show()
+#
+#     # Print the summary of the model
+#     print(model_fit.summary())
+# else:
+#     print("Train and test datasets are not defined.")
+#
+#
+#
+# # Ensure train and test datasets are defined before calling fit_sarimax
+# if 'train' in locals() and 'test' in locals():
+#     # Fit the model and make predictions
+#     predicted_temp_g, model_fit_g = fit_sarimax(train_g, test_g)
+#
+#     # Plotting the results
+#     plt.figure(figsize=(12, 6))
+#     plt.plot(train_g.index, train_g[train_g.columns[0]], label='Train', color='blue')  # Train target
+#     plt.plot(test_g.index, test_g[test_g.columns[0]], label='Test', color='orange')  # Test target
+#     plt.plot(test_g.index, predicted_temp_g, label='Predicted', color='green')  # Predictions
+#     plt.title(f'{train_g.columns[0]} Prediction')
+#     plt.xlabel('Date')
+#     plt.ylabel(train_g.columns[0])
+#     plt.legend()
+#     plt.show()
+#
+#     # Print the summary of the model
+#     print(model_fit_g.summary())
+# else:
+#     print("Train and test datasets are not defined.")
 
 
 

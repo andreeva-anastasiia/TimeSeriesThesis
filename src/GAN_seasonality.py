@@ -223,7 +223,7 @@ def trend_generate(trend_sequences, scaler, sequence_length=1462, noise_dim=100,
 
 
 # train seasonality
-def seasonality_generate(seasonality_sequences, scaler, sequence_length=365, noise_dim=100, epochs=1000,
+def seasonality_generate(seasonality_sequences, scaler, sequence_length=365, noise_dim=100, epochs=7000,
                          batch_size=32):
 
 

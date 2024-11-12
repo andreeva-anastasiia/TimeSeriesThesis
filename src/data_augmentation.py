@@ -111,3 +111,63 @@ def permutation(data, n_permutations=1):
         augmented_data.append(permuted_data)
 
     return augmented_data
+
+
+import numpy as np
+import random
+
+
+def TS_Mixup(X, K=4, alpha=1.5, lmin=128, lmax=2048):
+    """
+    Time Series Mixup function that combines multiple time series with convex combinations.
+
+    Parameters:
+    - X: List of 2D NumPy arrays, each with shape (time_steps, features).
+    - K: Maximum number of time series to mix (default: 3).
+    - alpha: Dirichlet concentration parameter for mixing weights (default: 1.5).
+    - lmin, lmax: Minimum and maximum lengths of the augmented time series (default: 128, 2048).
+
+    Returns:
+    - augmented_series: A 2D NumPy array representing the augmented time series.
+    """
+    # Step 1: Sample number of time series to mix (k) and the length (l)
+    k = random.randint(1, K)
+    l = random.randint(lmin, lmax)
+
+    # Ensure that l does not exceed the length of the shortest dataset
+    min_length = min([series.shape[0] for series in X])
+    if l > min_length:
+        l = min_length  # Adjust l to be within the available range
+
+    # Step 2: Sample k time series from X and apply mean scaling
+    scaled_series = []
+    for i in range(k):
+        # Step 2a: Sample a time series randomly from X
+        n = random.randint(0, len(X) - 1)
+        series = X[n]
+
+        # Step 2b: Randomly select a subseries of length l
+        start_idx = random.randint(0, series.shape[0] - l)
+        selected_series = series[start_idx:start_idx + l]
+
+        # Step 2c: Apply mean scaling to the time series
+        mean = np.mean(selected_series, axis=0)
+        scaled_series.append((selected_series - mean) / np.abs(mean))
+
+    # Step 3: Sample mixing weights from the Dirichlet distribution
+    lambdas = np.random.dirichlet([alpha] * k)
+
+    # Step 4: Combine the scaled time series using the Dirichlet weights
+    # Make sure all series are of the same length
+    augmented_series = np.zeros((l, scaled_series[0].shape[1]))  # Initialize augmented series array
+
+    for i in range(k):
+        # Truncate or pad the time series to match the desired length
+        series_to_add = scaled_series[i]
+        if series_to_add.shape[0] != l:
+            # Truncate the series to the required length if needed
+            series_to_add = series_to_add[:l]
+
+        augmented_series += lambdas[i] * series_to_add
+
+    return augmented_series
